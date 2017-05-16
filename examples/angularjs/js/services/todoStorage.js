@@ -27,6 +27,8 @@ angular.module('todomvc')
 		var store = {
 			todos: [],
 
+			availableOwners: ['Tom','Dick','Harry'],
+
 			api: $resource('/api/todos/:id', null,
 				{
 					update: { method:'PUT' }
@@ -94,6 +96,8 @@ angular.module('todomvc')
 
 		var store = {
 			todos: [],
+
+			availableOwners: ['Tom','Dick','Harry'],
 
 			_getFromLocalStorage: function () {
 				return JSON.parse(localStorage.getItem(STORAGE_ID) || '[]');

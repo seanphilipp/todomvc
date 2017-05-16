@@ -14,6 +14,7 @@
 			store = localStorage;
 
 			localStorage.todos = [];
+			localStorage.availableOwners = ['Tom','Dick','Harry'];
 			localStorage._getFromLocalStorage = function () {
 				return [];
 			};
@@ -40,12 +41,50 @@
 			expect(scope.allChecked).toBeTruthy();
 		});
 
+		it('should have owners from the availableOwners', function () {
+			expect(scope.owners[0]).toBe('Tom');
+			expect(scope.owners[1]).toBe('Dick');
+			expect(scope.owners[2]).toBe('Harry');
+		});
+
 		describe('the filter', function () {
 			it('should default to ""', function () {
 				scope.$emit('$routeChangeSuccess');
 
 				expect(scope.status).toBe('');
+				expect(scope.ownedBy).toBe('');
 				expect(scope.statusFilter).toEqual({});
+			});
+
+			describe('being at /all', function () {
+				it('should filter nothing', inject(function ($controller) {
+					ctrl = $controller('TodoCtrl', {
+						$scope: scope,
+						store: store,
+						$routeParams: {
+							status: 'all'
+						}
+					});
+
+					scope.$emit('$routeChangeSuccess');
+					expect(scope.statusFilter).toEqual({});
+				}));
+			});
+
+			describe('being at /all/tom', function () {
+				it('should filter just tom', inject(function ($controller) {
+					ctrl = $controller('TodoCtrl', {
+						$scope: scope,
+						store: store,
+						$routeParams: {
+							status: 'all',
+							owner: 'tom'
+						}
+					});
+
+					scope.$emit('$routeChangeSuccess');
+					expect(scope.statusFilter.owner).toBe('tom');
+				}));
 			});
 
 			describe('being at /active', function () {
@@ -63,6 +102,23 @@
 				}));
 			});
 
+			describe('being at /active/tom', function () {
+				it('should filter toms non-completed', inject(function ($controller) {
+					ctrl = $controller('TodoCtrl', {
+						$scope: scope,
+						store: store,
+						$routeParams: {
+							status: 'active',
+							owner: 'tom'
+						}
+					});
+
+					scope.$emit('$routeChangeSuccess');
+					expect(scope.statusFilter.completed).toBeFalsy();
+					expect(scope.statusFilter.owner).toBe('tom');
+				}));
+			});
+
 			describe('being at /completed', function () {
 				it('should filter completed', inject(function ($controller) {
 					ctrl = $controller('TodoCtrl', {
@@ -75,6 +131,23 @@
 
 					scope.$emit('$routeChangeSuccess');
 					expect(scope.statusFilter.completed).toBeTruthy();
+				}));
+			});
+
+			describe('being at /completed/tom', function () {
+				it('should filter toms completed', inject(function ($controller) {
+					ctrl = $controller('TodoCtrl', {
+						$scope: scope,
+						$routeParams: {
+							status: 'completed',
+							owner: 'tom'
+						},
+						store: store
+					});
+
+					scope.$emit('$routeChangeSuccess');
+					expect(scope.statusFilter.completed).toBeTruthy();
+					expect(scope.statusFilter.owner).toBe('tom');
 				}));
 			});
 		});
@@ -92,6 +165,19 @@
 
 			it('should not add empty Todos', function () {
 				scope.newTodo = '';
+				scope.owner = '';
+				scope.addTodo();
+				scope.$digest();
+				expect(scope.todos.length).toBe(0);
+
+				scope.newTodo = '';
+				scope.owner = 'tom';
+				scope.addTodo();
+				scope.$digest();
+				expect(scope.todos.length).toBe(0);
+
+				scope.newTodo = 'task';
+				scope.owner = '';
 				scope.addTodo();
 				scope.$digest();
 				expect(scope.todos.length).toBe(0);
@@ -107,6 +193,7 @@
 
 			it('should trim whitespace from new Todos', function () {
 				scope.newTodo = '  buy some unicorns  ';
+				scope.newTodoOwner = 'tom';
 				scope.addTodo();
 				scope.$digest();
 				expect(scope.todos.length).toBe(1);
@@ -120,14 +207,17 @@
 			beforeEach(inject(function ($controller) {
 				ctrl = $controller('TodoCtrl', {
 					$scope: scope,
-					store: store
+					store: store,
+					$routeParams: {
+						status: 'all'
+					}
 				});
 
-				store.insert({ title: 'Uncompleted Item 0', completed: false });
-				store.insert({ title: 'Uncompleted Item 1', completed: false });
-				store.insert({ title: 'Uncompleted Item 2', completed: false });
-				store.insert({ title: 'Completed Item 0', completed: true });
-				store.insert({ title: 'Completed Item 1', completed: true });
+				store.insert({ title: 'Uncompleted Item 0', owner: 'tom', completed: false });
+				store.insert({ title: 'Uncompleted Item 1', owner: 'dick', completed: false });
+				store.insert({ title: 'Uncompleted Item 2', owner: 'harry', completed: false });
+				store.insert({ title: 'Completed Item 0', owner: 'tom', completed: true });
+				store.insert({ title: 'Completed Item 1', owner: 'dick', completed: true });
 				scope.$digest();
 			}));
 
@@ -173,9 +263,11 @@
 				var todo = store.todos[0];
 				scope.editTodo(todo);
 				todo.title = 'Unicorn sparkly skypuffles.';
+				todo.owner = 'dick';
 				scope.revertEdits(todo);
 				scope.$digest();
 				expect(scope.todos[0].title).toBe('Uncompleted Item 0');
+				expect(scope.todos[0].owner).toBe('tom');
 			});
 		});
 	});
