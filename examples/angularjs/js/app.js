@@ -24,9 +24,8 @@ angular.module('todomvc', ['ngRoute', 'ngResource'])
 		};
 
 		$routeProvider
-			.when('/', routeConfig)
-			.when('/:status', routeConfig)
+			.when('/:status/:owner?', routeConfig)
 			.otherwise({
-				redirectTo: '/'
+				redirectTo: '/all'
 			});
 	});

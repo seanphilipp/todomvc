@@ -12,29 +12,39 @@ angular.module('todomvc')
 		var todos = $scope.todos = store.todos;
 
 		$scope.newTodo = '';
+		$scope.newTodoOwner = '';
+		$scope.owners = store.availableOwners;
 		$scope.editedTodo = null;
 
 		$scope.$watch('todos', function () {
-			$scope.remainingCount = $filter('filter')(todos, { completed: false }).length;
-			$scope.completedCount = todos.length - $scope.remainingCount;
+			var filter = { completed: true };
+			$scope.completedCount = $filter('filter')(todos, filter).length;
+			$scope.remainingCount = todos.length - $scope.completedCount;
 			$scope.allChecked = !$scope.remainingCount;
 		}, true);
 
 		// Monitor the current route for changes and adjust the filter accordingly.
 		$scope.$on('$routeChangeSuccess', function () {
 			var status = $scope.status = $routeParams.status || '';
+			var ownedBy = $scope.ownedBy = $routeParams.owner || '';
 			$scope.statusFilter = (status === 'active') ?
 				{ completed: false } : (status === 'completed') ?
 				{ completed: true } : {};
+			if(ownedBy){
+				$scope.statusFilter['owner'] = ownedBy;
+			}
+			console.log('status', $routeParams.status);
+			console.log('owner', $routeParams.owner);
 		});
 
 		$scope.addTodo = function () {
 			var newTodo = {
 				title: $scope.newTodo.trim(),
+				owner: $scope.newTodoOwner,
 				completed: false
 			};
 
-			if (!newTodo.title) {
+			if (!newTodo.title || !newTodo.owner) {
 				return;
 			}
 
@@ -42,6 +52,7 @@ angular.module('todomvc')
 			store.insert(newTodo)
 				.then(function success() {
 					$scope.newTodo = '';
+					$scope.newTodoOwner = '';
 				})
 				.finally(function () {
 					$scope.saving = false;
@@ -72,7 +83,7 @@ angular.module('todomvc')
 
 			todo.title = todo.title.trim();
 
-			if (todo.title === $scope.originalTodo.title) {
+			if (todo.title === $scope.originalTodo.title && todo.ownwer === $scope.originalTodo.owner) {
 				$scope.editedTodo = null;
 				return;
 			}
@@ -80,6 +91,7 @@ angular.module('todomvc')
 			store[todo.title ? 'put' : 'delete'](todo)
 				.then(function success() {}, function error() {
 					todo.title = $scope.originalTodo.title;
+					todo.owner = $scope.originalTodo.owner;
 				})
 				.finally(function () {
 					$scope.editedTodo = null;

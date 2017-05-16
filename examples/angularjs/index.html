@@ -15,7 +15,13 @@
 				<header id="header">
 					<h1>todos</h1>
 					<form id="todo-form" ng-submit="addTodo()">
-						<input id="new-todo" placeholder="What needs to be done?" ng-model="newTodo" ng-disabled="saving" autofocus>
+							<div id="new-todo">
+								<label for="owner">Owner: </label>
+								<select id="owner" ng-model="newTodoOwner" ng-disabled="saving" autofocus>
+								  <option ng-repeat="owner in owners" ng-value="owner">{{owner}}</option>
+								</select>
+								<input  placeholder="What needs to be done?" ng-model="newTodo" ng-disabled="saving" autofocus>
+							</div>
 					</form>
 				</header>
 				<section id="main" ng-show="todos.length" ng-cloak>
@@ -25,11 +31,17 @@
 						<li ng-repeat="todo in todos | filter:statusFilter track by $index" ng-class="{completed: todo.completed, editing: todo == editedTodo}">
 							<div class="view">
 								<input class="toggle" type="checkbox" ng-model="todo.completed" ng-change="toggleCompleted(todo)">
-								<label ng-dblclick="editTodo(todo)">{{todo.title}}</label>
+								<label ng-dblclick="editTodo(todo)">Owner: {{todo.owner}}</label>
+								<label ng-dblclick="editTodo(todo)"  >{{todo.title}}</label>
 								<button class="destroy" ng-click="removeTodo(todo)"></button>
 							</div>
 							<form ng-submit="saveEdits(todo, 'submit')">
-								<input class="edit" ng-trim="false" ng-model="todo.title" todo-escape="revertEdits(todo)" ng-blur="saveEdits(todo, 'blur')" todo-focus="todo == editedTodo">
+								<div ng-blur="saveEdits(todo, 'blur')" todo-escape="revertEdits(todo)" >
+									<select id="ownerSelect" class="edit" label="Owner:	" ng-model="todo.owner" todo-escape="revertEdits(todo)">
+									  <option ng-repeat="owner in owners" ng-value="owner">{{owner}}</option>
+									</select>
+									<input class="edit" ng-trim="false" ng-model="todo.title" todo-focus="todo == editedTodo">
+								</div>
 							</form>
 						</li>
 					</ul>
@@ -38,18 +50,23 @@
 					<span id="todo-count"><strong>{{remainingCount}}</strong>
 						<ng-pluralize count="remainingCount" when="{ one: 'item left', other: 'items left' }"></ng-pluralize>
 					</span>
-					<ul id="filters">
-						<li>
-							<a ng-class="{selected: status == ''} " href="#/">All</a>
-						</li>
-						<li>
-							<a ng-class="{selected: status == 'active'}" href="#/active">Active</a>
-						</li>
-						<li>
-							<a ng-class="{selected: status == 'completed'}" href="#/completed">Completed</a>
-						</li>
-					</ul>
-					<button id="clear-completed" ng-click="clearCompletedTodos()" ng-show="completedCount">Clear completed</button>
+						<ul id="filters">
+							<li>
+								<a ng-class="{selected: status == 'all'} " href="#/all">All</a>
+							</li>
+							<li>
+								<a ng-class="{selected: status == 'active'}" href="#/active">Active</a>
+							</li>
+							<li>
+								<a ng-class="{selected: status == 'completed'}" href="#/completed">Completed</a>
+							</li>
+						</ul>
+						<button id="clear-completed" ng-click="clearCompletedTodos()" ng-show="completedCount">Clear completed</button>
+						<ul id="ownerFilters">
+							<li ng-repeat="owner in owners">
+								<a ng-class="{selected: ownedBy == owner} " href="#/{{status}}/{{owner}}">{{owner}}</a>
+							</li>
+						</ul>
 				</footer>
 			</section>
 			<footer id="info">
